@@ -7,9 +7,9 @@ import uuid
 class CategoryAPITestCase(TestCase):
   def test_create_category(self):
     """ Test para crear una nueva categoría """
-    url = reverse('categories:create_category')
+    url = reverse('categories:categories')
     data = {'name': 'New Category', 'type': 'expense'}
-    response = self.client.post(url, data, format='json')
+    response = self.client.post(url, json.dumps(data), content_type='application/json')
     self.assertEqual(response.status_code, 201)
 
     # Verificar que la respuesta incluye un UUID válido para 'id'
@@ -27,7 +27,7 @@ class CategoryAPITestCase(TestCase):
     Category.objects.create(name='Category 2', type='income')
 
     # Obtener la lista de categorías
-    url = reverse('categories:list_categories')
+    url = reverse('categories:categories')
     response = self.client.get(url)
 
     # Verificar que la respuesta tenga el código de estado 200
