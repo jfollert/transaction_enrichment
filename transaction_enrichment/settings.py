@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "merchants.apps.MerchantsConfig",
     "categories.apps.CategoriesConfig",
     'django.contrib.admin',
     'django.contrib.auth',
