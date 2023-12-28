@@ -7,8 +7,8 @@ import uuid
 class Merchant(models.Model):
   id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
   merchant_name = models.CharField(max_length=255)
-  merchant_logo = models.URLField()
-  category_id = models.ForeignKey(Category, on_delete=models.CASCADE)
+  merchant_logo = models.URLField(blank=True)
+  category_id = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
   created_at = models.DateTimeField(default=timezone.now)
   updated_at = models.DateTimeField(default=timezone.now)
 

@@ -3,7 +3,6 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Merchant
 from categories.models import Category
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
 import json
 
 @csrf_exempt
@@ -11,12 +10,13 @@ def merchants_view(request):
   if request.method == 'POST':
     data = json.loads(request.body)
 
-    # Validar el ID de la categoría
+    # Validar el ID de la categoría si viene el campo solamente
     category_id = data.get('category_id')
-    try:
-      category = Category.objects.get(id=category_id)
-    except Category.DoesNotExist:
-      return HttpResponseBadRequest('Categoría inválida')
+    if category_id != None:
+      try:
+        category = Category.objects.get(id=category_id)
+      except Category.DoesNotExist:
+        return HttpResponseBadRequest('Categoría inválida')
 
     merchant_name = data.get('merchant_name')
     merchant_logo = data.get('merchant_logo')
@@ -58,10 +58,12 @@ def merchants_view(request):
 
 @csrf_exempt
 def merchant_detail(request, id):
-  merchant = get_object_or_404(Merchant, id=id)
-
   if request.method == 'GET':
-    # Handle GET request to retrieve a merchant by its UUID
+    try:
+      merchant = Merchant.objects.get(id=id)
+    except Merchant.DoesNotExist:
+      return HttpResponse(status=404)
+    
     merchant_data = {
       'id': merchant.id,
       'merchant_name': merchant.merchant_name,
@@ -71,16 +73,21 @@ def merchant_detail(request, id):
     return JsonResponse(merchant_data, status=200)
   
   elif request.method == 'PUT':
-    # Handle PUT request to update a merchant by its UUID
     data = json.loads(request.body)
+
+    try:
+      merchant = Merchant.objects.get(id=id)
+    except Merchant.DoesNotExist:
+      merchant = Merchant(id=id)
 
     # Validar el ID de la categoría
     category_id = data.get('category_id')
-    try:
-      category = Category.objects.get(id=category_id)
-      merchant.category_id = category
-    except Category.DoesNotExist:
-      return HttpResponseBadRequest('Categoría inválida')
+    if category_id != None:
+      try:
+        category = Category.objects.get(id=category_id)
+        merchant.category_id = category
+      except Category.DoesNotExist:
+        return HttpResponseBadRequest('Categoría inválida')
     
     merchant.merchant_name = data.get('merchant_name', merchant.merchant_name)
     merchant.merchant_logo = data.get('merchant_logo', merchant.merchant_logo)
@@ -93,9 +100,9 @@ def merchant_detail(request, id):
     return HttpResponse(status=204)
 
   if request.method == 'DELETE':
-    # Handle DELETE request to delete a merchant by its UUID
-    merchant.delete()
-    return HttpResponse(status=204)
-
-  else:
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+      merchant = Merchant.objects.get(id=id)
+      merchant.delete()
+      return HttpResponse(status=204)
+    except Merchant.DoesNotExist:
+      return HttpResponse(status=404)

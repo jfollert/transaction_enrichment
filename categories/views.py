@@ -29,10 +29,12 @@ def categories_view(request):
 
 @csrf_exempt
 def category_detail(request, id):
-  category = get_object_or_404(Category, id=id)
-
   if request.method == 'GET':
-    # Handle GET request to retrieve a category by its UUID
+    try:
+      category = Category.objects.get(id=id)
+    except Category.DoesNotExist:
+      return HttpResponse(status=404)
+    
     category_data = {
       'id': category.id,
       'name': category.name,
@@ -43,18 +45,26 @@ def category_detail(request, id):
     return JsonResponse(category_data, status=200)
   
   elif request.method == 'PUT':
-    # Handle PUT request to update a category by its UUID
+    
     data = json.loads(request.body)
-    category.name = data.get('name', category.name)
-    category.type = data.get('type', category.type)
-    category.updated_at = timezone.now()
-    category.save()
-    return HttpResponse(status=204)
+
+    category, created = Category.objects.get_or_create(id=id, defaults=data)
+
+    if not created:
+      category.name = data.get('name', category.name)
+      category.type = data.get('type', category.type)
+      category.updated_at = timezone.now()
+      category.save()
+
+    return HttpResponse(status=201 if created else 204)
 
   if request.method == 'DELETE':
-    # Handle DELETE request to delete a category by its UUID
-    category.delete()
-    return HttpResponse(status=204)
+    try:
+      category = Category.objects.get(id=id)
+      category.delete()
+      return HttpResponse(status=204)
+    except Category.DoesNotExist:
+      return HttpResponse(status=404)
 
   else:
     return JsonResponse({'error': 'Method not allowed'}, status=405)

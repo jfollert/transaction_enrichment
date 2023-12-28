@@ -4,7 +4,6 @@ from .models import Keyword
 from merchants.models import Merchant
 from .models import Keyword
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
 import json
 
 @csrf_exempt
@@ -54,10 +53,12 @@ def keywords_view(request):
 
 @csrf_exempt
 def keyword_detail(request, id):
-  keyword = get_object_or_404(Keyword, id=id)
-
   if request.method == 'GET':
-    # Handle GET request to retrieve a keyword by its UUID
+    try:
+      keyword = Keyword.objects.get(id=id)
+    except Keyword.DoesNotExist:
+      return HttpResponse(status=404)
+    
     keyword_data = {
       'id': keyword.id,
       'keyword': keyword.keyword,
@@ -68,30 +69,35 @@ def keyword_detail(request, id):
     return JsonResponse(keyword_data, status=200)
   
   elif request.method == 'PUT':
-    # Handle PUT request to update a keyword by its UUID
     data = json.loads(request.body)
 
-    # Validar el ID del comercio
-    merchant_id = data.get('merchant_id')
-    try:
-      merchant = Merchant.objects.get(id=merchant_id)
-      keyword.merchant = merchant
-    except Merchant.DoesNotExist:
-      return HttpResponseBadRequest('Categoría inválida')
+    keyword, created = Keyword.objects.get_or_create(id=id, defaults=data)
     
-    keyword.keyword = data.get('keyword', keyword.keyword)
-    
-    current_timestamp = timezone.now()
-    keyword.updated_at = current_timestamp
-    
-    keyword.save()
+    if not created:
+      # Validar el ID del comercio
+      merchant_id = data.get('merchant_id')
+      try:
+        merchant = Merchant.objects.get(id=merchant_id)
+        keyword.merchant = merchant
+      except Merchant.DoesNotExist:
+        return HttpResponseBadRequest('Comercio inválido')
+      
+      keyword.keyword = data.get('keyword', keyword.keyword)
+      
+      current_timestamp = timezone.now()
+      keyword.updated_at = current_timestamp
+      
+      keyword.save()
 
-    return HttpResponse(status=204)
+    return HttpResponse(status=201 if created else 204)
 
   if request.method == 'DELETE':
-    # Handle DELETE request to delete a keyword by its UUID
-    keyword.delete()
-    return HttpResponse(status=204)
+    try:
+      keyword = Keyword.objects.get(id=id)
+      keyword.delete()
+      return HttpResponse(status=204)
+    except Keyword.DoesNotExist:
+      return HttpResponse(status=404)
 
   else:
     return JsonResponse({'error': 'Method not allowed'}, status=405)
