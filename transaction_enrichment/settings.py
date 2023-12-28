@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "transactions.apps.TransactionsConfig",
     "keywords.apps.KeywordsConfig",
     "merchants.apps.MerchantsConfig",
     "categories.apps.CategoriesConfig",
